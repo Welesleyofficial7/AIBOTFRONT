@@ -1,0 +1,10 @@
+.wrapper {
+    display: flex;
+    height: 100vh;
+}
+
+.chatWrapper {
+    flex: 1;
+    position: relative;
+    background: #f0f2f5;
+}
