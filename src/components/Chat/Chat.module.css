@@ -17,6 +17,21 @@
     background-color: #2946a0;
 }
 
+.siriContainer {
+    width: 100%;
+    height: 50%;
+    /* При необходимости можно задать отступы или позиционирование */
+    position: relative;  /* Новое: задаём относительное позиционирование для корректного масштабирования внутреннего canvas */
+    overflow: hidden;    /* Новое: скрываем части, выходящие за границы контейнера */
+}
+
+/* Новое правило для canvas внутри .siriContainer */
+.siriContainer canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 /* Стиль для нижней панели с полем ввода */
 .inputBar {
     position: relative;
@@ -85,7 +100,36 @@
     /* Вертикальное центрирование */
     justify-content: center;
     /* Горизонтальное центрирование */
-    transition: background-color cubic-bezier(0.165, 0.84, 0.44, 1) ease;
+    transition: background-color cubic-bezier(0.165, 0.84, 0.44, 1);
+    /* Плавные переходы */
+}
+
+.voiceButton {
+    position: absolute;
+    /* Абсолютное позиционирование */
+    right: 4.5rem;
+    /* Отступ справа */
+    bottom: 4.2rem;
+    /* Отступ снизу */
+    width: 40px;
+    /* Фиксированная ширина */
+    height: 40px;
+    /* Фиксированная высота */
+    border-radius: 50%;
+    /* Круглая форма */
+    background-color: white;
+    /* Синий фон */
+    border: none;
+    /* Без границ */
+    cursor: pointer;
+    /* Курсор указывает на кликабельность */
+    display: flex;
+    /* Для центрирования содержимого */
+    align-items: center;
+    /* Вертикальное центрирование */
+    justify-content: center;
+    /* Горизонтальное центрирование */
+    transition: background-color cubic-bezier(0.165, 0.84, 0.44, 1);
     /* Плавные переходы */
 }
 
@@ -103,5 +147,22 @@
 }
 
 .sendButton:hover img {
+    filter: invert();
+}
+
+.voiceButton:hover {
+    background-color: #2946a0;
+    /* Темно-синий фон при наведении */
+
+}
+
+/* Стиль для иконки стрелки */
+.voiceButton img {
+    width: 30px;
+    /* Размер иконки */
+    height: 30px;
+}
+
+.voiceButton:hover img {
     filter: invert();
 }
