@@ -1,0 +1,53 @@
+.authContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f2f5;
+    padding: 20px;
+}
+
+.authCard {
+    width: 100%;
+    max-width: 420px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.logoContainer {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.logo {
+    height: 48px;
+    margin-bottom: 16px;
+}
+
+.title {
+    color: #2946a0;
+    margin-bottom: 0 !important;
+}
+
+.alert {
+    margin-bottom: 24px;
+}
+
+.ant-form-item {
+    margin-bottom: 16px;
+}
+
+.ant-input-affix-wrapper {
+    border-radius: 8px !important;
+    padding: 8px 11px;
+}
+
+.ant-btn {
+    border-radius: 8px !important;
+    font-weight: 500;
+}
+
+.ant-divider-inner-text {
+    font-size: 14px;
+}

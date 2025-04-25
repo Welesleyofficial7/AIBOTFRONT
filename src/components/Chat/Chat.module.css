@@ -7,142 +7,217 @@
     background-color: #2946a0;
 }
 
-/* Стиль для блока сообщений */
+/* Обновленные стили для messages */
 .messages {
     flex: 1;
-    /* Растягивается на всю доступную высоту */
     overflow-y: auto;
-    /* Добавляем прокрутку, если сообщений много */
     padding: 16px;
     background-color: #2946a0;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Центрируем по горизонтали */
+    justify-content: center; /* Центрируем по вертикали */
+    transition: justify-content 0.3s ease; /* Анимация перемещения */
 }
 
+/* Когда input свернут - центрируем содержимое */
+.inputBar.collapsed ~ .messages {
+    justify-content: center;
+}
+
+/* Когда input развернут - содержимое вверху */
+.inputBar.expanded ~ .messages {
+    justify-content: flex-start;
+}
+
+/* Фиксированная высота для siriContainer */
 .siriContainer {
     width: 100%;
-    height: 50%;
-    /* При необходимости можно задать отступы или позиционирование */
-    position: relative;  /* Новое: задаём относительное позиционирование для корректного масштабирования внутреннего canvas */
-    overflow: hidden;    /* Новое: скрываем части, выходящие за границы контейнера */
+    height: 50vh; /* Используем viewport height для пропорций */
+    position: relative;
+    overflow: hidden;
+    margin-top: 20px;
+    transition: margin-top 0.3s ease;
+    transform-origin: center center; /* Точка трансформации по центру */
 }
+
+
 
 /* Новое правило для canvas внутри .siriContainer */
 .siriContainer canvas {
     display: block;
-    width: 100%;
-    height: 100%;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain; /* Сохраняем пропорции */
 }
 
-/* Стиль для нижней панели с полем ввода */
+.inputContainer {
+    position: relative;
+    height: auto;
+    transition: height 0.3s ease;
+    padding-top: 30px; /* Добавляем место для кнопки */
+    margin-top: 10px; /* Дополнительный отступ */
+}
+
+.inputBar.collapsed {
+    height: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+}
+
+/* Кнопка сворачивания/разворачивания */
+.toggleButton {
+    position: absolute;
+    top: -10px; /* Подняли значительно выше */
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    min-width: 120px;
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 18px;
+    background-color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    z-index: 10;
+    opacity: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-weight: 500;
+    color: #2946a0;
+}
+
+.inputContainer:hover .toggleButton {
+    opacity: 1;
+    animation: fadeIn 0.3s ease forwards;
+}
+
+.toggleButton:hover {
+    background-color: #f0f0f0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.toggleButton img {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+}
+
+.toggleButton.rotated img {
+    transform: rotate(180deg);
+}
+
+/* Текст кнопки */
+.toggleButton::after {
+    content: 'Свернуть';
+}
+
+.toggleButton.rotated::after {
+    content: 'Развернуть';
+}
+
+/* Обновляем позиционирование inputBar */
 .inputBar {
     position: relative;
-    /* Для позиционирования кнопки внутри */
     padding: 8px 16px;
-    /* Отступы */
+    padding-top: 20px;
     background-color: #2946a0;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-    /* Легкая тень для разделения */
-    /* Убедимся, что inputBar занимает всю доступную ширину */
-    /* Предотвращаем переполнение */
+    transition: all 0.3s ease;
+    overflow: hidden;
+    margin-top: 10px;
+    margin-left: 2vw;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.inputBar.expanded {
+    height: auto;
+}
+
+.inputBar.collapsed {
+    height: 0;
+    padding: 0 16px;
 }
 
 /* Стиль для высокого поля ввода */
 .customInput {
-    width: 90%;
-    /* Оставляем место для кнопки */
+    width: 90%; /* Теперь занимает всю ширину */
     height: 80px;
-    /* Высота поля ввода */
-    padding: 12px;
-    /* Внутренние отступы */
+    padding: 12px 60px 12px 12px; /* Добавляем отступ справа для кнопок */
     font-size: 16px;
-    /* Размер шрифта */
     border: 2px solid #ffffff;
-    /* Белая граница */
     border-radius: 16px;
-    /* Округление углов */
     background-color: #ffffff;
-    /* Белый фон */
     resize: none;
-    /* Отключаем возможность изменения размера */
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    /* Плавные переходы */
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.inputBar.collapsed .customInput {
+    height: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
 }
 
 .customInput:focus {
     border-color: #40a9ff;
-    /* Цвет границы при фокусе */
     box-shadow: 0 0 8px rgba(64, 169, 255, 0.5);
-    /* Подсветка при фокусе */
 }
 
 /* Стиль для кнопки "Отправить" */
 .sendButton {
     position: absolute;
-    /* Абсолютное позиционирование */
-    right: 4.5rem;
-    /* Отступ справа */
-    bottom: 16px;
-    /* Отступ снизу */
+    right: 70px;
+    bottom: 20px;
     width: 40px;
-    /* Фиксированная ширина */
     height: 40px;
-    /* Фиксированная высота */
     border-radius: 50%;
-    /* Круглая форма */
     background-color: white;
-    /* Синий фон */
     border: none;
-    /* Без границ */
     cursor: pointer;
-    /* Курсор указывает на кликабельность */
     display: flex;
-    /* Для центрирования содержимого */
     align-items: center;
-    /* Вертикальное центрирование */
     justify-content: center;
-    /* Горизонтальное центрирование */
     transition: background-color cubic-bezier(0.165, 0.84, 0.44, 1);
-    /* Плавные переходы */
 }
 
 .voiceButton {
     position: absolute;
-    /* Абсолютное позиционирование */
-    right: 4.5rem;
-    /* Отступ справа */
-    bottom: 4.2rem;
-    /* Отступ снизу */
+    right: 110px; /* Смещаем левее кнопки отправки */
+    bottom: 20px;
     width: 40px;
-    /* Фиксированная ширина */
     height: 40px;
-    /* Фиксированная высота */
     border-radius: 50%;
-    /* Круглая форма */
     background-color: white;
-    /* Синий фон */
     border: none;
-    /* Без границ */
     cursor: pointer;
-    /* Курсор указывает на кликабельность */
     display: flex;
-    /* Для центрирования содержимого */
     align-items: center;
-    /* Вертикальное центрирование */
     justify-content: center;
-    /* Горизонтальное центрирование */
     transition: background-color cubic-bezier(0.165, 0.84, 0.44, 1);
-    /* Плавные переходы */
+}
+
+.inputBar.collapsed .sendButton,
+.inputBar.collapsed .voiceButton {
+    display: none;
 }
 
 .sendButton:hover {
     background-color: #2946a0;
-    /* Темно-синий фон при наведении */
-
 }
 
-/* Стиль для иконки стрелки */
 .sendButton img {
     width: 36px;
-    /* Размер иконки */
     height: 36px;
 }
 
@@ -152,17 +227,85 @@
 
 .voiceButton:hover {
     background-color: #2946a0;
-    /* Темно-синий фон при наведении */
-
 }
 
-/* Стиль для иконки стрелки */
 .voiceButton img {
     width: 30px;
-    /* Размер иконки */
     height: 30px;
 }
 
 .voiceButton:hover img {
     filter: invert();
+}
+
+/* Стили для приветственного сообщения */
+.welcomeMessage {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    transition: all 0.3s ease;
+    transform-origin: center top;
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.welcomeMessage h2 {
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.welcomeMessage p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Адаптация при свернутом состоянии */
+.inputBar.collapsed ~ .messages .welcomeMessage {
+    margin-bottom: 10px;
+    padding: 15px;
+    max-width: 70%;
+}
+
+.inputBar.expanded ~ .messages .welcomeMessage {
+    transform: scale(1);
+}
+
+.inputBar.collapsed ~ .messages .welcomeMessage {
+    transform: scale(0.9);
+    margin-bottom: 5px;
+}
+
+.inputBar.collapsed ~ .messages .welcomeMessage h2 {
+    font-size: 1.3rem;
+}
+
+.inputBar.collapsed ~ .messages .welcomeMessage p {
+    font-size: 0.9rem;
+}
+
+.inputBar.collapsed ~ .messages .siriContainer {
+    margin-top: 10px;
+    transform: scale(0.8); /* Масштабируем до 80% */
+    height: 40vh; /* Соответственно уменьшаем высоту */
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
