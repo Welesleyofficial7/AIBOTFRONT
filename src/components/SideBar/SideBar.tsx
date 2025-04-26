@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import styles from './SideBar.module.css';
 import logo from '../../assets/logo.svg';
+import logo_cut from '../../assets/logo_cut.svg';
 
 const { Sider } = Layout;
 
@@ -49,7 +50,7 @@ const SideBar: React.FC<SideBarProps> = ({ collapsed }) => {
         <Sider trigger={null} collapsible collapsed={collapsed} theme='light' className={styles.sidebar}>
             <div className={styles.header}>
                 <div className={styles.logo}>
-                    <img src={logo} alt="Logo" className={styles.logoImage} />
+                    <img src={!collapsed? logo: logo_cut} alt="Logo" className={styles.logoImage} />
                 </div>
             </div>
 
