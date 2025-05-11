@@ -16,6 +16,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import styles from './AuthPage.module.css';
 import logo from '../../assets/logo.svg';
+import { getUserByEmail, login, register } from '../../services/AuthService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { Title, Text } = Typography;
 
@@ -24,23 +26,65 @@ const AuthPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { setAuthenticated, setAccessToken, setRefreshToken } = useAuth();
 
     const onFinish = (values: any) => {
         setLoading(true);
         setError('');
 
-        // Заглушка для авторизации/регистрации
-        setTimeout(() => {
-            setLoading(false);
-            console.log('Auth data:', values);
+        if (isLogin) {
+            login({ username: values.email, password: values.password })
+                .then(async (response) => {
+                    localStorage.setItem('accessToken', response.access_token);
+                    localStorage.setItem('refreshToken', response.refresh_token);
+                    setAuthenticated(true);
+                    setAccessToken(response.access_token);
+                    setRefreshToken(response.refresh_token);
 
-            // В реальном приложении здесь будет вызов API
-            if (values.email === 'demo@example.com' && values.password === 'demo123') {
-                navigate('/'); // Перенаправляем на главную после успешной авторизации
-            } else {
-                setError('Неверные учетные данные. Попробуйте demo@example.com / demo123');
+                    try {
+                        const userData = await getUserByEmail(values.email);
+                        localStorage.setItem('userId', String(userData.userId));
+                    } catch (err) {
+                        console.error("Ошибка получения ID пользователя", err);
+                    }
+
+                    setLoading(false);
+                    navigate('/');
+                })
+                .catch((error) => {
+                    setLoading(false);
+                    setError('Неверные учетные данные');
+                });
+        } else {
+            if (values.password !== values.confirm) {
+                setLoading(false);
+                setError('Пароли не совпадают');
+                return;
             }
-        }, 1000);
+
+            register({ email: values.email, password: values.password })
+                .then(async () => {
+                    setIsLogin(true);
+                    setError('Регистрация успешна. Войдите в систему.');
+
+                    const loginResponse = await login({
+                        username: values.email,
+                        password: values.password,
+                    });
+
+                    localStorage.setItem('accessToken', loginResponse.access_token);
+                    localStorage.setItem('refreshToken', loginResponse.refresh_token);
+
+                    const userData = await getUserByEmail(values.email);
+                    localStorage.setItem('userId', String(userData.userId));
+
+                    navigate('/');
+                })
+                .catch((error) => {
+                    setError('Ошибка при регистрации');
+                    setLoading(false);
+                });
+        }
     };
 
     return (
@@ -63,7 +107,13 @@ const AuthPage: React.FC = () => {
                 >
                     <Form.Item
                         name="email"
-                        rules={[{ required: true, message: 'Пожалуйста, введите email!' }]}
+                        rules={[
+                            { required: true, message: 'Пожалуйста, введите email!' },
+                            {
+                                type: 'email',
+                                message: 'Некорректный формат email!',
+                            },
+                        ]}
                     >
                         <Input
                             prefix={<MailOutlined />}

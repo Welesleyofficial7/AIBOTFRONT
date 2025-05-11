@@ -7,7 +7,6 @@ const SiriWidget: React.FC = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        // Используем размеры родительского элемента, а не окна
         const resizeCanvas = () => {
             if (canvas.parentElement) {
                 canvas.width = canvas.parentElement.clientWidth;

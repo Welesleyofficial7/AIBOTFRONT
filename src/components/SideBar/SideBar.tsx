@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Button, Divider } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Menu, Button, Divider, message } from 'antd';
 import {
     UserOutlined,
     VideoCameraOutlined,
@@ -10,47 +10,67 @@ import {
 import styles from './SideBar.module.css';
 import logo from '../../assets/logo.svg';
 import logo_cut from '../../assets/logo_cut.svg';
+import { createChat, getChatsByUser } from '../../services/ChatService';
+import { ChatDTO } from '../../types/ChatDto';
 
 const { Sider } = Layout;
 
 interface SideBarProps {
     collapsed: boolean;
+    userId: number;
+    currentChatId: number | null;
+    onChatSelect: (chatId: number | null) => void;
 }
 
-interface Chat {
-    id: string;
-    title: string;
-}
+const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, currentChatId, onChatSelect }) => {
+    const [chats, setChats] = useState<ChatDTO[]>([]);
+    const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
 
-const SideBar: React.FC<SideBarProps> = ({ collapsed }) => {
-    const [chats, setChats] = useState<Chat[]>([
-        { id: '1', title: 'Чат 1' },
-        { id: '2', title: 'Чат 2' },
-    ]);
-
-    // Заглушка для создания нового чата
-    const createNewChat = () => {
-        const newChatId = Date.now().toString();
-        const newChat = {
-            id: newChatId,
-            title: `Чат ${chats.length + 1}`
+    useEffect(() => {
+        const fetchChats = async () => {
+            try {
+                const fetchedChats = await getChatsByUser(userId);
+                setChats(fetchedChats);
+                if (fetchedChats.length > 0 && !selectedChatId) {
+                    const lastChat = fetchedChats[fetchedChats.length - 1];
+                    setSelectedChatId(lastChat.chatId || null);
+                }
+            } catch (error) {
+                message.error('Не удалось загрузить чаты');
+            }
         };
-        setChats([...chats, newChat]);
-        // Здесь будет вызов API для создания нового чата
-        console.log('Создан новый чат:', newChat);
+
+        fetchChats();
+    }, [userId]);
+
+    const createNewChat = async () => {
+        try {
+            const newChat: Partial<ChatDTO> = { userId };
+            const createdChat = await createChat(newChat);
+            setChats(prev => [...prev, createdChat]);
+            setSelectedChatId(createdChat.chatId || null);
+            message.success('Чат создан успешно');
+        } catch (error) {
+            message.error('Не удалось создать чат');
+        }
     };
 
-    // Заглушка для выбора чата
     const selectChat = (chatId: string) => {
-        // Здесь будет вызов API для загрузки выбранного чата
-        console.log('Выбран чат:', chatId);
+        const id = parseInt(chatId);
+        setSelectedChatId(id);
+        onChatSelect(id);
+    };
+
+    const handleLogoClick = () => {
+        setSelectedChatId(null);
+        onChatSelect(null);
     };
 
     return (
         <Sider trigger={null} collapsible collapsed={collapsed} theme='light' className={styles.sidebar}>
             <div className={styles.header}>
-                <div className={styles.logo}>
-                    <img src={!collapsed? logo: logo_cut} alt="Logo" className={styles.logoImage} />
+                <div className={styles.logo} onClick={() => handleLogoClick()}>
+                    <img src={!collapsed ? logo : logo_cut} alt="Logo" className={styles.logoImage} />
                 </div>
             </div>
 
@@ -71,12 +91,12 @@ const SideBar: React.FC<SideBarProps> = ({ collapsed }) => {
                 <Menu
                     theme="light"
                     mode="inline"
-                    defaultSelectedKeys={['1']}
+                    defaultSelectedKeys={[String(selectedChatId)]}
                     onClick={({ key }) => selectChat(key)}
                 >
                     {chats.map(chat => (
-                        <Menu.Item key={chat.id} icon={<MessageOutlined />}>
-                            {!collapsed && chat.title}
+                        <Menu.Item key={chat.chatId?.toString() || ''} icon={<MessageOutlined />}>
+                            {!collapsed && chat.title || `Чат #${chat.chatId}`}
                         </Menu.Item>
                     ))}
                 </Menu>

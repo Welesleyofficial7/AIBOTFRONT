@@ -2,41 +2,71 @@ import React, { useState } from 'react';
 import SideBar from '../components/SideBar/SideBar';
 import Chat from '../components/Chat/Chat';
 import { FloatButton } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined } from '@ant-design/icons';
 import styles from './MainPage.module.css';
+import { useAuth } from '../contexts/AuthContext';
+import { Button } from 'antd';
 
 const MainPage: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
+    const [currentChatId, setCurrentChatId] = useState<number | null>(null);
 
-  // Зададим ширины Sidebar и вычислим левый отступ кнопки
-  // (чтобы она была, например, на 20px правее границы сайдбара)
-  const siderWidth = 15;
-  const siderCollapsedWidth = 7;
-  const offsetFromSidebar = 20;
+    const { isAuthenticated, setAuthenticated, setAccessToken, setRefreshToken } = useAuth();
+    const userId = parseInt(localStorage.getItem('userId') || '0');
 
-  const buttonLeft = collapsed
-    ? siderCollapsedWidth + offsetFromSidebar  // когда сайдбар свёрнут
-    : siderWidth + offsetFromSidebar;         // когда сайдбар развернут
+    const handleLogout = () => {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userId');
+        setAuthenticated(false);
+        setAccessToken(null);
+        setRefreshToken(null);
+        window.location.href = '/auth';
+    };
 
-  return (
-    <div className={styles.wrapper}>
-      <SideBar collapsed={collapsed} />
-      <div className={styles.chatWrapper}>
-        <Chat />
-        
-        <FloatButton
-          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          onClick={() => setCollapsed(!collapsed)}
-          style={{
-            position: 'absolute',
-            top: 20,
-            left: buttonLeft,
-            transition: 'left 0.3s ease', // плавный переход
-          }}
-        />
-      </div>
-    </div>
-  );
+    const siderWidth = 200;
+    const siderCollapsedWidth = 80;
+    const offsetFromSidebar = 20;
+    const buttonLeft = collapsed ? siderCollapsedWidth + offsetFromSidebar : siderWidth + offsetFromSidebar;
+
+    return (
+        <div className={styles.wrapper}>
+            <SideBar
+                collapsed={collapsed}
+                userId={userId}
+                currentChatId={currentChatId}
+                onChatSelect={setCurrentChatId}
+            />
+            <div className={styles.chatWrapper}>
+                <Chat chatId={currentChatId} />
+
+                <FloatButton
+                    icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                    onClick={() => setCollapsed(!collapsed)}
+                    style={{
+                        position: 'absolute',
+                        top: 20,
+                        left: buttonLeft,
+                        transition: 'left 0.3s ease',
+                    }}
+                />
+
+                <Button
+                    type="primary"
+                    danger
+                    icon={<LogoutOutlined />}
+                    onClick={handleLogout}
+                    style={{
+                        position: 'absolute',
+                        top: 20,
+                        right: 20,
+                    }}
+                >
+                    Выйти
+                </Button>
+            </div>
+        </div>
+    );
 };
 
 export default MainPage;

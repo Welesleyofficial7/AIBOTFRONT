@@ -36,7 +36,6 @@
     overflow-y: auto;
 }
 
-/* Стили для меню */
 .ant-menu {
     border-right: none !important;
 }
@@ -51,7 +50,6 @@
     color: #1890ff !important;
 }
 
-/* Адаптация для свернутого состояния */
 .sidebar.collapsed .ant-menu-item {
     padding: 0 calc(50% - 12px) !important;
 }
