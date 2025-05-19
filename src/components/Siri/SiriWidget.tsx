@@ -30,7 +30,7 @@ const SiriWidget: React.FC = () => {
 
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const baseRadius = 150; // For the main Siri shape
+        const baseRadius = 150;
         const points = 200;
         const mainShapeAmplitude = 15;
 
@@ -72,26 +72,31 @@ const SiriWidget: React.FC = () => {
             return blendColors(colors[index], colors[nextIndex], blendFactor);
         }
 
+        const particleOrbitBase = baseRadius + mainShapeAmplitude + 48;
+
         const particles: {
             angle: number;
             speed: number;
-            targetOrbitRadius: number; // Renamed from baseRadius
+            targetOrbitRadius: number;
             targetSize: number;
             appearFactor: number;
+            jumpSensitivityFactor: number; // New: Individual jump sensitivity
         }[] = [];
         for (let i = 0; i < 100; i++) {
             particles.push({
                 angle: Math.random() * Math.PI * 2,
                 speed: (Math.random() - 0.5) * 0.01,
-                targetOrbitRadius: 50 + Math.random() * 100, // The orbit radius when fully appeared
+                targetOrbitRadius: particleOrbitBase + 5 + Math.random() * 15,
                 targetSize: 2 + Math.random() * 3,
                 appearFactor: 0,
+                jumpSensitivityFactor: 0.5 + Math.random(), // Random factor between 0.5 and 1.5
             });
         }
 
         let animationFrameId: number;
         const APPEAR_FADE_SPEED = 0.05;
-        const PARTICLE_SOUND_RADIUS_SENSITIVITY = 25; // How much sound affects particle orbit radius
+        const PARTICLE_SOUND_RADIUS_SENSITIVITY = 20;
+        const PARTICLE_VERTICAL_JUMP_SENSITIVITY = 15;
 
         const drawWidget = (time: number) => {
             if (!ctx || !canvasRef.current) return;
@@ -107,15 +112,13 @@ const SiriWidget: React.FC = () => {
                 soundLevel = average / 255;
             }
 
-            const pulseAmplitude = 10 + 20 * soundLevel;
-            const pulseFrequency = 0.001;
-            const pulsedRadius = baseRadius + pulseAmplitude * Math.sin(time * pulseFrequency);
-            const dynamicAmplitude = mainShapeAmplitude + 30 * soundLevel;
-            const maxRadius = baseRadius + pulseAmplitude + dynamicAmplitude;
-
+            const currentPulseAmplitude = 10 + 20 * soundLevel;
+            const pulsedRadius = baseRadius + currentPulseAmplitude * Math.sin(time * 0.001);
+            const currentDynamicDeformationAmplitude = mainShapeAmplitude + 30 * soundLevel;
+            const gradientOuterRadius = baseRadius + currentPulseAmplitude + currentDynamicDeformationAmplitude;
             const gradient = ctx.createRadialGradient(
                 centerX, centerY, pulsedRadius * 0.1,
-                centerX, centerY, maxRadius
+                centerX, centerY, gradientOuterRadius
             );
 
             const cycleDuration = 10000;
@@ -134,7 +137,6 @@ const SiriWidget: React.FC = () => {
                 const layerFactor = (layer + 1) / auraLayers;
                 const layerRadius = pulsedRadius * (1 + layerFactor * (0.5 + soundLevel));
                 const layerOpacity = 0.1 * (1 - layerFactor) * (0.5 + soundLevel);
-
                 ctx.beginPath();
                 for (let i = 0; i < points; i++) {
                     const angle = (i / points) * Math.PI * 2;
@@ -142,11 +144,10 @@ const SiriWidget: React.FC = () => {
                     for (let h = 0; h < harmonics; h++) {
                         deformation += amplitudesArr[h] * Math.sin(frequencies[h] * angle + phases[h] + time * speeds[h]);
                     }
-                    const r = layerRadius + dynamicAmplitude * deformation;
+                    const r = layerRadius + currentDynamicDeformationAmplitude * deformation;
                     const x = centerX + r * Math.cos(angle);
                     const y = centerY + r * Math.sin(angle);
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 }
                 ctx.closePath();
                 ctx.fillStyle = `rgba(0, 0, 0, ${layerOpacity})`;
@@ -161,26 +162,19 @@ const SiriWidget: React.FC = () => {
                 for (let h = 0; h < harmonics; h++) {
                     deformation += amplitudesArr[h] * Math.sin(frequencies[h] * angle + phases[h] + time * speeds[h]);
                 }
-                const r = pulsedRadius + dynamicAmplitude * deformation;
+                const r = pulsedRadius + currentDynamicDeformationAmplitude * deformation;
                 const x = centerX + r * Math.cos(angle);
                 const y = centerY + r * Math.sin(angle);
-                if (i === 0) {
-                    firstX = x; firstY = y;
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
+                if (i === 0) { firstX = x; firstY = y; ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
             }
             ctx.lineTo(firstX, firstY);
             ctx.closePath();
-
             ctx.fillStyle = gradient;
             ctx.fill();
             ctx.lineWidth = 1;
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
             ctx.stroke();
 
-            // Update and Render Particles
             ctx.shadowColor = animatedColor;
             ctx.shadowBlur = 10 + 20 * soundLevel;
 
@@ -190,22 +184,23 @@ const SiriWidget: React.FC = () => {
                 } else {
                     particle.appearFactor = Math.max(0, particle.appearFactor - APPEAR_FADE_SPEED);
                 }
-
                 particle.angle += particle.speed * (1 + soundLevel);
 
                 if (particle.appearFactor > 0) {
                     const easedAppearFactor = easeInOutCubic(particle.appearFactor);
                     const currentSize = particle.targetSize * easedAppearFactor;
                     const currentOpacity = (0.3 + soundLevel * 0.7) * easedAppearFactor;
-
-                    // Particles fly out from center: current orbit radius depends on appearFactor
                     const currentBaseOrbitRadius = particle.targetOrbitRadius * easedAppearFactor;
-                    // Sound effect on radius also scales with appearance
+
                     const soundEffectOnRadius = soundLevel * PARTICLE_SOUND_RADIUS_SENSITIVITY * easedAppearFactor;
                     const finalOrbitRadius = currentBaseOrbitRadius + soundEffectOnRadius;
 
                     const x = centerX + finalOrbitRadius * Math.cos(particle.angle);
-                    const y = centerY + finalOrbitRadius * Math.sin(particle.angle);
+                    let y_orbital = centerY + finalOrbitRadius * Math.sin(particle.angle);
+
+                    // Use individual jump sensitivity
+                    const verticalJump = soundLevel * PARTICLE_VERTICAL_JUMP_SENSITIVITY * particle.jumpSensitivityFactor * easedAppearFactor;
+                    const y = y_orbital - verticalJump;
 
                     ctx.beginPath();
                     ctx.arc(x, y, currentSize, 0, Math.PI * 2);
@@ -214,11 +209,9 @@ const SiriWidget: React.FC = () => {
                     ctx.fill();
                 }
             });
-
             animationFrameId = requestAnimationFrame(drawWidget);
         };
         animationFrameId = requestAnimationFrame(drawWidget);
-
         return () => {
             window.removeEventListener('resize', resizeCanvas);
             cancelAnimationFrame(animationFrameId);
