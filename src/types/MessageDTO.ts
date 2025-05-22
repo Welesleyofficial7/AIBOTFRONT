@@ -3,4 +3,5 @@ export interface MessageDTO {
     chatId: number | any;
     content: string;
     sender: 'USER' | 'BOT';
+    audioData: string;
 }

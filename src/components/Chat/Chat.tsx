@@ -20,6 +20,63 @@ const Chat: React.FC<ChatProps> = ({ chatId }) => {
     const [messages, setMessages] = useState<MessageDTO[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const clientRef = useRef<Client | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    const base64ToBlob = (base64: string, contentType: string) => {
+        const byteCharacters = atob(base64);
+        const byteArrays = [];
+        for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+            const slice = byteCharacters.slice(offset, offset + 512);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+        }
+        return new Blob(byteArrays, { type: contentType });
+    };
+
+    const playAudio = useCallback((base64Data: string) => {
+        try {
+            // Останавливаем предыдущее аудио
+            if (audioRef.current) {
+                audioRef.current.pause();
+                URL.revokeObjectURL(audioRef.current.src);
+            }
+
+            console.log(base64Data);
+
+            const audioBlob = base64ToBlob(base64Data, 'audio/mpeg');
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const newAudio = new Audio(audioUrl);
+
+            // Очистка при окончании воспроизведения
+            newAudio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                audioRef.current = null;
+            };
+
+            // Сохраняем ссылку и запускаем
+            audioRef.current = newAudio;
+            newAudio.play().catch(error => {
+                console.error('Автовоспроизведение заблокировано:', error);
+            });
+        } catch (error) {
+            console.error('Ошибка воспроизведения аудио:', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            // Очистка при размонтировании компонента
+            if (audioRef.current) {
+                audioRef.current.pause();
+                URL.revokeObjectURL(audioRef.current.src);
+                audioRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (chatId) {
@@ -62,9 +119,14 @@ const Chat: React.FC<ChatProps> = ({ chatId }) => {
                                 sender: receivedMessage.sender,
                                 content: receivedMessage.content || receivedMessage.response,
                                 chatId: chatId,
+                                audioData: receivedMessage.audioData
                             };
                             console.log("HERE SHOULD BE " + receivedMessage.sender);
                             setMessages(prev => [...prev, botMessage]);
+                            // Автовоспроизведение при получении аудио
+                            if (receivedMessage.audioData && receivedMessage.sender === 'BOT') {
+                                playAudio(receivedMessage.audioData);
+                            }
                         }
                     } catch (error) {
                         console.error("Ошибка при обработке WebSocket сообщения:", error);
@@ -91,7 +153,7 @@ const Chat: React.FC<ChatProps> = ({ chatId }) => {
                 clientRef.current = null;
             }
         };
-    }, [chatId]);
+    }, [chatId, playAudio]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
