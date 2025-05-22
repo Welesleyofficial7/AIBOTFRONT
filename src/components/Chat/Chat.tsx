@@ -21,6 +21,14 @@ const Chat: React.FC<ChatProps> = ({ chatId }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const clientRef = useRef<Client | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const LoadingIndicator = () => (
+        <div className={styles.loadingContainer}>
+            <div className={styles.spinner}></div>
+            <span className={styles.loadingText}>Ответ на подходе...</span>
+        </div>
+    );
 
     const base64ToBlob = (base64: string, contentType: string) => {
         const byteCharacters = atob(base64);
@@ -124,11 +132,14 @@ const Chat: React.FC<ChatProps> = ({ chatId }) => {
                             console.log("HERE SHOULD BE " + receivedMessage.sender);
                             setMessages(prev => [...prev, botMessage]);
                             // Автовоспроизведение при получении аудио
-                            if (receivedMessage.audioData && receivedMessage.sender === 'BOT') {
+                            if (receivedMessage.sender === 'BOT') {
                                 playAudio(receivedMessage.audioData);
+                                setIsLoading(false);
                             }
+
                         }
                     } catch (error) {
+                        setIsLoading(false);
                         console.error("Ошибка при обработке WebSocket сообщения:", error);
                     }
                 });
@@ -164,6 +175,7 @@ const Chat: React.FC<ChatProps> = ({ chatId }) => {
     }, [messages]);
 
     const handleSend = useCallback(() => {
+        setIsLoading(true);
         if (!message.trim() || !chatId) return;
 
         if (!clientRef.current || !clientRef.current.connected) {
@@ -207,6 +219,7 @@ const Chat: React.FC<ChatProps> = ({ chatId }) => {
                                 <pre>{msg.content}</pre>
                             </div>
                         ))}
+                        {isLoading && <LoadingIndicator />}
                         <div ref={messagesEndRef} />
                     </>
                 ) : (<div>
