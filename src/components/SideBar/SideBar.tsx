@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Button, Divider, message } from 'antd';
 import {
     UserOutlined,
-    VideoCameraOutlined,
-    UploadOutlined,
     PlusOutlined,
-    MessageOutlined
+    MessageOutlined,
+    LogoutOutlined,
 } from '@ant-design/icons';
 import styles from './SideBar.module.css';
 import logo from '../../assets/logo.svg';
@@ -66,6 +65,13 @@ const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, currentChatId, onC
         onChatSelect(null);
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userId');
+        window.location.href = '/auth';
+    };
+
     return (
         <Sider trigger={null} collapsible collapsed={collapsed} theme='light' className={styles.sidebar}>
             <div className={styles.header}>
@@ -109,11 +115,27 @@ const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, currentChatId, onC
                 mode="inline"
                 items={[
                     { key: 'settings', icon: <UserOutlined />, label: !collapsed && 'Настройки' },
-                    { key: 'help', icon: <VideoCameraOutlined />, label: !collapsed && 'Помощь' },
-                    { key: 'about', icon: <UploadOutlined />, label: !collapsed && 'О проекте' },
                 ]}
                 style={{ backgroundColor: "#FFFFFF" }}
             />
+
+            {/* Кнопка Выйти */}
+            <div className={styles.logoutButton}>
+                <Button
+                    type="text"
+                    danger
+                    icon={<LogoutOutlined />}
+                    onClick={handleLogout}
+                    block
+                    style={{
+                        width: '100%',
+                        justifyContent: 'flex-start',
+                        paddingLeft: 16,
+                    }}
+                >
+                    {!collapsed && 'Выйти'}
+                </Button>
+            </div>
         </Sider>
     );
 };

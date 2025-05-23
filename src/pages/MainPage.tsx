@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import SideBar from '../components/SideBar/SideBar';
 import Chat from '../components/Chat/Chat';
 import { FloatButton } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined } from '@ant-design/icons';
 import styles from './MainPage.module.css';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
+import {createChat} from "../services/ChatService";
 
 const MainPage: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [currentChatId, setCurrentChatId] = useState<number | null>(null);
-
+    const navigate = useNavigate();
     const { isAuthenticated, setAuthenticated, setAccessToken, setRefreshToken } = useAuth();
     const userId = parseInt(localStorage.getItem('userId') || '0');
 
@@ -24,9 +26,26 @@ const MainPage: React.FC = () => {
         window.location.href = '/auth';
     };
 
-    const siderWidth = 200;
-    const siderCollapsedWidth = 80;
-    const offsetFromSidebar = 20;
+    const handleCreateChat = async (userId: number | undefined) => {
+        try {
+            const newChat = await createChat({ userId });
+            setCurrentChatId(newChat.chatId ?? 0);
+            return newChat.chatId;
+        } catch (error) {
+            console.error('Ошибка создания чата:', error);
+            throw error;
+        }
+    };
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate('/auth');
+        }
+    }, [isAuthenticated, navigate]);
+
+    const siderWidth = 18;
+    const siderCollapsedWidth = 10;
+    const offsetFromSidebar = 8;
     const buttonLeft = collapsed ? siderCollapsedWidth + offsetFromSidebar : siderWidth + offsetFromSidebar;
 
     return (
@@ -38,7 +57,7 @@ const MainPage: React.FC = () => {
                 onChatSelect={setCurrentChatId}
             />
             <div className={styles.chatWrapper}>
-                <Chat chatId={currentChatId} />
+                <Chat chatId={currentChatId} onCreateChat={handleCreateChat} userId={userId} />
 
                 <FloatButton
                     icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -50,20 +69,6 @@ const MainPage: React.FC = () => {
                         transition: 'left 0.3s ease',
                     }}
                 />
-
-                <Button
-                    type="primary"
-                    danger
-                    icon={<LogoutOutlined />}
-                    onClick={handleLogout}
-                    style={{
-                        position: 'absolute',
-                        top: 20,
-                        right: 20,
-                    }}
-                >
-                    Выйти
-                </Button>
             </div>
         </div>
     );

@@ -50,6 +50,11 @@
     color: #1890ff !important;
 }
 
+.logoutButton {
+    padding: 12px;
+    margin-top: auto;
+}
+
 .sidebar.collapsed .ant-menu-item {
     padding: 0 calc(50% - 12px) !important;
 }

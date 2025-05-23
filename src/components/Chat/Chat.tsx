@@ -7,16 +7,17 @@ import SiriWidget from "../Siri/SiriWidget";
 import SockJS from "sockjs-client";
 import { Client } from '@stomp/stompjs';
 import { MessageDTO } from '../../types/MessageDTO';
-
-import { getMessagesByChat } from '../../services/ChatService';
+import { getMessagesByChat, createChat } from '../../services/ChatService';
 
 interface ChatProps {
     chatId: number | null;
+    userId: number;
+    onCreateChat: (userId: number | undefined) => Promise<number | undefined>;
 }
 
-const Chat: React.FC<ChatProps> = ({ chatId }) => {
+const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId}) => {
     const [message, setMessage] = useState('');
-    const [isInputExpanded, setIsInputExpanded] = useState(true);
+    const [isInputExpanded, setIsInputExpanded] = useState(false);
     const [messages, setMessages] = useState<MessageDTO[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const clientRef = useRef<Client | null>(null);
@@ -174,19 +175,34 @@ const Chat: React.FC<ChatProps> = ({ chatId }) => {
         scrollToBottom();
     }, [messages]);
 
-    const handleSend = useCallback(() => {
+    const handleSend = useCallback(async () => {
         setIsLoading(true);
-        if (!message.trim() || !chatId) return;
 
-        if (!clientRef.current || !clientRef.current.connected) {
-            console.warn("WebSocket не подключен");
+        if (!message.trim()) {
+            setIsLoading(false);
+            return;
+        }
+
+        let effectiveChatId = chatId;
+
+        if (!effectiveChatId) {
+            try {
+                effectiveChatId = await onCreateChat(userId) ?? 0;
+            } catch (error) {
+                setIsLoading(false);
+                return;
+            }
+        }
+
+        if (!clientRef.current?.connected) {
+            setIsLoading(false);
             return;
         }
 
         const payload = {
             content: message,
             sender: 'USER',
-            chatId: chatId
+            chatId: effectiveChatId
         };
 
         clientRef.current.publish({
@@ -195,7 +211,8 @@ const Chat: React.FC<ChatProps> = ({ chatId }) => {
         });
 
         setMessage('');
-    }, [message, chatId]);
+        setIsLoading(false);
+    }, [message, chatId, onCreateChat, userId]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
