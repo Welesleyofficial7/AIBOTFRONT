@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {use, useEffect, useState} from 'react';
 import SideBar from '../components/SideBar/SideBar';
 import Chat from '../components/Chat/Chat';
 import { FloatButton } from 'antd';
@@ -16,6 +16,7 @@ const MainPage: React.FC = () => {
     const userId = parseInt(localStorage.getItem('userId') || '0');
     const [refreshChats, setRefreshChats] = useState(false);
     const [currentChatId, setCurrentChatId] = useState<number | null>(null);
+    const [hasInteracted, setHasInteracted] = useState(false);
 
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
@@ -40,6 +41,10 @@ const MainPage: React.FC = () => {
     };
 
     useEffect(() => {
+        console.log(hasInteracted);
+    }, [hasInteracted]);
+
+    useEffect(() => {
         if (!isAuthenticated) {
             navigate('/auth');
         }
@@ -53,6 +58,8 @@ const MainPage: React.FC = () => {
     return (
         <div className={styles.wrapper}>
             <SideBar
+                setHasInteracted={setHasInteracted}
+                hasInteracted={hasInteracted}
                 collapsed={collapsed}
                 userId={userId}
                 selectedChatId={currentChatId}
@@ -65,7 +72,14 @@ const MainPage: React.FC = () => {
                 setRefreshedChats={setRefreshChats}
             />
             <div className={styles.chatWrapper}>
-                <Chat chatId={currentChatId} onCreateChat={handleCreateChat} userId={userId} setSelectedChatId={setCurrentChatId}/>
+                <Chat
+                    chatId={currentChatId}
+                    onCreateChat={handleCreateChat}
+                    userId={userId}
+                    setSelectedChatId={setCurrentChatId}
+                    hasInteracted={hasInteracted}
+                    setHasInteracted={setHasInteracted}
+                />
 
                 <FloatButton
                     icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}

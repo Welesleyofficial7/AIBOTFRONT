@@ -44,11 +44,9 @@
 }
 
 .inputContainer {
+    flex: 1;
     position: relative;
-    height: auto;
-    transition: height 0.3s ease;
-    padding-top: 30px;
-    margin-top: 10px;
+    transition: all 0.3s ease;
 }
 
 .inputBar.collapsed {
@@ -116,11 +114,8 @@
     padding: clamp(8px, 2vw, 16px);
     padding-top: clamp(16px, 4vw, 20px);
     background-color: #2946a0;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
     overflow: hidden;
-    margin-top: clamp(8px, 2vw, 12px);
-    margin-left: clamp(1vw, 2vw, 3vw);
 }
 
 @keyframes fadeIn {
@@ -376,4 +371,96 @@ pre {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.chat {
+    position: relative;
+    overflow: hidden;
+}
+
+.inputRow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: linear-gradient(0deg, #2946a0 80%, transparent 100%);
+    position: relative;
+    z-index: 2;
+}
+
+.bottomPanel {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 16px;
+    background: linear-gradient(0deg, #2946a0 80%, transparent 100%);
+    z-index: 2;
+}
+
+.widgetContainer {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+    .inputRow {
+        gap: 12px;
+        padding: 12px;
+        align-items: center;
+    }
+
+    .widgetContainer {
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+    }
+
+    .inputContainer {
+        flex: 1 1 auto;
+    }
+}
+
+.widgetContainer.recording {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(90, 200, 250, 0.5);
+}
+
+.fullscreenWidget {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80vw;
+    height: 80vh;
+    max-width: 600px;
+    max-height: 600px;
+}
+
+.minimized {
+    width: 100% !important;
+    height: 100% !important;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.minimized:hover {
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    .bottomPanel {
+        flex-direction: column;
+    }
+
+    .widgetContainer {
+        width: 50px;
+        height: 50px;
+    }
 }

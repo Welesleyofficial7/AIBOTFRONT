@@ -1,16 +1,43 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
+import styles from '../Chat/Chat.module.css';
 
-const SiriWidget: React.FC = () => {
+interface SiriWidgetProps {
+    onMinimize?: () => void;
+    onListeningChange?: (listening: boolean) => void;
+    minimized?: boolean;
+}
+
+const SiriWidget: React.FC<SiriWidgetProps> = ({
+                                                   onMinimize,
+                                                   onListeningChange,
+                                                   minimized = false
+                                               }) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
-    const [isListening, setIsListening] = useState(false);
+    const [isListening, setIsListening] = useState<boolean | undefined>(undefined);
     const isListeningRef = useRef(isListening);
+
+    useEffect(() => {
+        if (isListening === undefined) return;
+
+        if (typeof onListeningChange === 'function') {
+            onListeningChange(isListening);
+        }
+
+        if (!isListening && isListeningRef.current) {
+            if (typeof onMinimize === 'function') {
+                onMinimize();
+            }
+        }
+    }, [isListening]);
+
 
     useEffect(() => {
         isListeningRef.current = isListening;
     }, [isListening]);
+
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -28,11 +55,17 @@ const SiriWidget: React.FC = () => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        const containerWidth = canvas.parentElement?.clientWidth || 0;
+        const baseRadius = minimized
+            ? containerWidth * 0.3
+            : 150;
+
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const baseRadius = 150;
         const points = 200;
-        const mainShapeAmplitude = 15;
+        const mainShapeAmplitude = minimized
+            ? containerWidth * 0.05
+            : 15;
 
         const harmonics = 7;
         const frequencies = Array.from({ length: harmonics }, (_, h) => h + 1);
@@ -72,7 +105,10 @@ const SiriWidget: React.FC = () => {
             return blendColors(colors[index], colors[nextIndex], blendFactor);
         }
 
-        const particleOrbitBase = baseRadius + mainShapeAmplitude + 48;
+        const particleOrbitBase = baseRadius + mainShapeAmplitude + (minimized ? 15 : 48);
+        const particleTargetSize = minimized
+            ? 1 + Math.random() * 2
+            : 2 + Math.random() * 3;
 
         const particles: {
             angle: number;
@@ -87,7 +123,7 @@ const SiriWidget: React.FC = () => {
                 angle: Math.random() * Math.PI * 2,
                 speed: (Math.random() - 0.5) * 0.01,
                 targetOrbitRadius: particleOrbitBase + 5 + Math.random() * 15,
-                targetSize: 2 + Math.random() * 3,
+                targetSize: particleTargetSize,
                 appearFactor: 0,
                 jumpSensitivityFactor: 0.5 + Math.random(), // Random factor between 0.5 and 1.5
             });
@@ -112,9 +148,9 @@ const SiriWidget: React.FC = () => {
                 soundLevel = average / 255;
             }
 
-            const currentPulseAmplitude = 10 + 20 * soundLevel;
-            const pulsedRadius = baseRadius + currentPulseAmplitude * Math.sin(time * 0.001);
+            const currentPulseAmplitude = (minimized ? 5 : 10) + 20 * soundLevel;
             const currentDynamicDeformationAmplitude = mainShapeAmplitude + 30 * soundLevel;
+            const pulsedRadius = baseRadius + currentPulseAmplitude * Math.sin(time * 0.001);
             const gradientOuterRadius = baseRadius + currentPulseAmplitude + currentDynamicDeformationAmplitude;
             const gradient = ctx.createRadialGradient(
                 centerX, centerY, pulsedRadius * 0.1,
@@ -216,7 +252,7 @@ const SiriWidget: React.FC = () => {
             window.removeEventListener('resize', resizeCanvas);
             cancelAnimationFrame(animationFrameId);
         };
-    }, []);
+    }, [minimized]);
 
     useEffect(() => {
         const closeAudioContext = async () => {
@@ -272,7 +308,12 @@ const SiriWidget: React.FC = () => {
         <canvas
             ref={canvasRef}
             style={{ display: 'block', width: '100%', height: '100%' }}
-            onClick={() => setIsListening(prev => !prev)}
+            onClick={() => {
+                setIsListening(prev => {
+                    return prev === undefined ? true : !prev;
+                });
+            }}
+            className={minimized ? styles.minimized : styles.fullscreen}
         />
     );
 };

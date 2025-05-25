@@ -22,9 +22,11 @@ interface SideBarProps {
     onChatSelect: (chatId: number | null) => void;
     setSelectedChatId: (chatId: number| null) => void;
     setRefreshedChats: (chatId: boolean) => void;
+    setHasInteracted: (chatId: boolean) => void;
+    hasInteracted: boolean;
 }
 
-const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, selectedChatId, onChatSelect, refreshChats , setSelectedChatId, setRefreshedChats}) => {
+const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, selectedChatId, onChatSelect, refreshChats , setSelectedChatId, setRefreshedChats, setHasInteracted, hasInteracted}) => {
     const [chats, setChats] = useState<ChatDTO[]>([]);
     const chatsEndRef = useRef<HTMLDivElement>(null);
     const activeChatRef = useRef<HTMLDivElement>(null);
@@ -95,6 +97,7 @@ const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, selectedChatId, on
     const handleLogoClick = () => {
         setSelectedChatId(null);
         onChatSelect(null);
+        setHasInteracted(false);
     };
 
     const handleLogout = () => {

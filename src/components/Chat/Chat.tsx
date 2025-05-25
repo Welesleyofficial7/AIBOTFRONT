@@ -14,9 +14,11 @@ interface ChatProps {
     userId: number;
     onCreateChat: (userId: number | undefined) => Promise<number | undefined>;
     setSelectedChatId: (chatId: number| null) => void;
+    setHasInteracted: (chatId: boolean) => void;
+    hasInteracted: boolean;
 }
 
-const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedChatId}) => {
+const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedChatId, setHasInteracted, hasInteracted}) => {
     const [message, setMessage] = useState('');
     const [isInputExpanded, setIsInputExpanded] = useState(false);
     const [messages, setMessages] = useState<MessageDTO[]>([]);
@@ -24,6 +26,17 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedC
     const clientRef = useRef<Client | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isWidgetMinimized, setIsWidgetMinimized] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+
+    const handleWidgetMinimize = () => {
+        setIsWidgetMinimized(true);
+        setHasInteracted(true);
+    };
+
+    const handleWidgetInteraction = (listening: boolean) => {
+        setIsRecording(listening);
+    };
 
     const LoadingIndicator = () => (
         <div className={styles.loadingContainer}>
@@ -247,36 +260,54 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedC
                             <h2>Привет! Я ваш голосовой помощник</h2>
                             <p>Выберите чат или создайте новый</p>
                         </div>
-                        <div className={styles.siriContainer}>
-                            <SiriWidget />
-                        </div>
+                        {!hasInteracted && !chatId && (
+                            <div className={styles.siriContainer}>
+                                <SiriWidget
+                                    onMinimize={handleWidgetMinimize}
+                                    onListeningChange={handleWidgetInteraction}
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
 
             {/* Поле ввода */}
-            <div className={styles.inputContainer}>
-                <button
-                    className={`${styles.toggleButton} ${!isInputExpanded ? styles.rotated : ''}`}
-                    onClick={() => setIsInputExpanded(!isInputExpanded)}
-                >
-                    <img src={ArrowDown} alt="Toggle input" />
-                </button>
-                <div className={`${styles.inputBar} ${isInputExpanded ? styles.expanded : styles.collapsed}`}>
-                    <textarea
-                        className={styles.customInput}
-                        placeholder="Введите ваше сообщение..."
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                    />
-                    <button className={styles.voiceButton} onClick={() => console.log("Голосовой ввод")}>
-                        <img src={Mic} alt="Voice input" />
+            {/* Поле ввода */}
+            <div className={styles.inputRow}>
+                <div className={styles.inputContainer}>
+                    <button
+                        className={`${styles.toggleButton} ${!isInputExpanded ? styles.rotated : ''}`}
+                        onClick={() => setIsInputExpanded(!isInputExpanded)}
+                    >
+                        <img src={ArrowDown} alt="Toggle input" />
                     </button>
-                    <button className={styles.sendButton} onClick={handleSend}>
-                        <img src={ArrowUp} alt="Send message" />
-                    </button>
+                    <div className={`${styles.inputBar} ${isInputExpanded ? styles.expanded : styles.collapsed}`}>
+      <textarea
+          className={styles.customInput}
+          placeholder="Введите ваше сообщение..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+      />
+                        <button className={styles.voiceButton} onClick={() => console.log("Голосовой ввод")}>
+                            <img src={Mic} alt="Voice input" />
+                        </button>
+                        <button className={styles.sendButton} onClick={handleSend}>
+                            <img src={ArrowUp} alt="Send message" />
+                        </button>
+                    </div>
                 </div>
+
+                {(hasInteracted && chatId) && (
+                    <div className={`${styles.widgetContainer} ${isRecording ? styles.recording : ''}`}>
+                        <SiriWidget
+                            onMinimize={handleWidgetMinimize}
+                            onListeningChange={handleWidgetInteraction}
+                            minimized={true}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );
