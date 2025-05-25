@@ -137,23 +137,26 @@ const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, selectedChatId, on
                     onClick={({key}) => selectChat(key)}
                 >
                     {chats.map(chat => (
-                        <Menu.Item key={chat.chatId?.toString() || ''} icon={<MessageOutlined/>}>
-                            {!collapsed && chat.title || `Чат #${chat.chatId}`}
+                        <Menu.Item
+                            key={chat.chatId?.toString() || ''}
+                            icon={<MessageOutlined/>}
+                        >
+                            {!collapsed && (chat.title || `Чат #${chat.chatId}`)}
                         </Menu.Item>
                     ))}
                     <div ref={chatsEndRef}/>
                 </Menu>
             </div>
 
-            <Divider style={{ margin: '12px 0' }} />
+            <Divider style={{margin: '12px 0'}}/>
 
             <Menu
                 theme="light"
                 mode="inline"
                 items={[
-                    { key: 'settings', icon: <UserOutlined />, label: !collapsed && 'Настройки' },
+                    {key: 'settings', icon: <UserOutlined/>, label: !collapsed && 'Настройки'},
                 ]}
-                style={{ backgroundColor: "#FFFFFF" }}
+                style={{backgroundColor: "#FFFFFF"}}
             />
 
             {/* Кнопка Выйти */}

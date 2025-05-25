@@ -4,11 +4,11 @@
     flex-direction: column;
     height: 100vh;
     border-right: 1px solid #f0f0f0;
+    overflow: hidden; /* Важно! */
 }
 
 .header {
-    display: flex;
-    align-items: center;
+    flex-shrink: 0; /* Запрет сжатия */
     padding: 16px;
     background: #FFFFFF;
     border-bottom: 1px solid #f0f0f0;
@@ -28,16 +28,35 @@
 }
 
 .newChatButton {
+    flex-shrink: 0; /* Запрет сжатия */
     padding: 12px;
 }
 
 .chatHistory {
-    flex: 1;
+    flex-grow: 1;
+    max-height: 50vh;
     overflow-y: auto;
+    min-height: 0;
+}
+
+/* Стили для скроллбара */
+.chatHistory::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chatHistory::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 3px;
+}
+
+.chatHistory::-webkit-scrollbar-thumb {
+    background-color: #d9d9d9;
+    border-radius: 3px;
 }
 
 .ant-menu {
     border-right: none !important;
+    height: 100% !important; /* Фиксируем высоту меню */
 }
 
 .ant-menu-item {
@@ -53,6 +72,7 @@
 .logoutButton {
     padding: 12px;
     margin-top: auto;
+    flex-shrink: 0; /* Запрещаем сжатие */
 }
 
 .sidebar.collapsed .ant-menu-item {

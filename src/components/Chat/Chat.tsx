@@ -116,6 +116,7 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedC
         } catch (error) {
             console.error(`Ошибка загрузки сообщений для чата ${chatId}:`, error);
         }
+        setHasInteracted(true);
     };
 
     useEffect(() => {
