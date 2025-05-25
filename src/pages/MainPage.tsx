@@ -11,10 +11,11 @@ import {createChat} from "../services/ChatService";
 
 const MainPage: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
-    const [currentChatId, setCurrentChatId] = useState<number | null>(null);
     const navigate = useNavigate();
     const { isAuthenticated, setAuthenticated, setAccessToken, setRefreshToken } = useAuth();
     const userId = parseInt(localStorage.getItem('userId') || '0');
+    const [refreshChats, setRefreshChats] = useState(false);
+    const [currentChatId, setCurrentChatId] = useState<number | null>(null);
 
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
@@ -30,6 +31,7 @@ const MainPage: React.FC = () => {
         try {
             const newChat = await createChat({ userId });
             setCurrentChatId(newChat.chatId ?? 0);
+            setRefreshChats(prev => !prev);
             return newChat.chatId;
         } catch (error) {
             console.error('Ошибка создания чата:', error);
@@ -53,11 +55,17 @@ const MainPage: React.FC = () => {
             <SideBar
                 collapsed={collapsed}
                 userId={userId}
-                currentChatId={currentChatId}
-                onChatSelect={setCurrentChatId}
+                selectedChatId={currentChatId}
+                setSelectedChatId={setCurrentChatId}
+                onChatSelect={(id) => {
+                    setCurrentChatId(id);
+                    setRefreshChats(prev => !prev);
+                }}
+                refreshChats={refreshChats}
+                setRefreshedChats={setRefreshChats}
             />
             <div className={styles.chatWrapper}>
-                <Chat chatId={currentChatId} onCreateChat={handleCreateChat} userId={userId} />
+                <Chat chatId={currentChatId} onCreateChat={handleCreateChat} userId={userId} setSelectedChatId={setCurrentChatId}/>
 
                 <FloatButton
                     icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}

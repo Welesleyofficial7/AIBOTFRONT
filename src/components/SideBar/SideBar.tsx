@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import { Layout, Menu, Button, Divider, message } from 'antd';
 import {
     UserOutlined,
@@ -17,13 +17,17 @@ const { Sider } = Layout;
 interface SideBarProps {
     collapsed: boolean;
     userId: number;
-    currentChatId: number | null;
+    selectedChatId: number | null;
+    refreshChats: boolean;
     onChatSelect: (chatId: number | null) => void;
+    setSelectedChatId: (chatId: number| null) => void;
+    setRefreshedChats: (chatId: boolean) => void;
 }
 
-const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, currentChatId, onChatSelect }) => {
+const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, selectedChatId, onChatSelect, refreshChats , setSelectedChatId, setRefreshedChats}) => {
     const [chats, setChats] = useState<ChatDTO[]>([]);
-    const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+    const chatsEndRef = useRef<HTMLDivElement>(null);
+    const activeChatRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchChats = async () => {
@@ -41,6 +45,34 @@ const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, currentChatId, onC
 
         fetchChats();
     }, [userId]);
+
+    useEffect(() => {
+        console.log('INSIDE SIDEBAR LOGGING');
+        setRefreshedChats(true);
+        if (selectedChatId && activeChatRef.current) {
+            activeChatRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
+        }
+    }, [selectedChatId]);
+
+    useEffect(() => {
+        chatsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chats.length]);
+
+    useEffect(() => {
+        const loadChats = async () => {
+            try {
+                const data = await getChatsByUser(userId);
+                setChats(data);
+            } catch (error) {
+                console.error('Ошибка загрузки чатов:', error);
+            }
+        };
+
+        loadChats();
+    }, [userId, refreshChats]);
 
     const createNewChat = async () => {
         try {
@@ -98,13 +130,15 @@ const SideBar: React.FC<SideBarProps> = ({ collapsed, userId, currentChatId, onC
                     theme="light"
                     mode="inline"
                     defaultSelectedKeys={[String(selectedChatId)]}
-                    onClick={({ key }) => selectChat(key)}
+                    selectedKeys={[String(selectedChatId)]}
+                    onClick={({key}) => selectChat(key)}
                 >
                     {chats.map(chat => (
-                        <Menu.Item key={chat.chatId?.toString() || ''} icon={<MessageOutlined />}>
+                        <Menu.Item key={chat.chatId?.toString() || ''} icon={<MessageOutlined/>}>
                             {!collapsed && chat.title || `Чат #${chat.chatId}`}
                         </Menu.Item>
                     ))}
+                    <div ref={chatsEndRef}/>
                 </Menu>
             </div>
 

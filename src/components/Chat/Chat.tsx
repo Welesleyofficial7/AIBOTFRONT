@@ -13,9 +13,10 @@ interface ChatProps {
     chatId: number | null;
     userId: number;
     onCreateChat: (userId: number | undefined) => Promise<number | undefined>;
+    setSelectedChatId: (chatId: number| null) => void;
 }
 
-const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId}) => {
+const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedChatId}) => {
     const [message, setMessage] = useState('');
     const [isInputExpanded, setIsInputExpanded] = useState(false);
     const [messages, setMessages] = useState<MessageDTO[]>([]);
@@ -176,42 +177,44 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId}) => {
     }, [messages]);
 
     const handleSend = useCallback(async () => {
+        if (!message.trim()) return;
+
         setIsLoading(true);
+        console.log('OUT');
+        try {
+            let effectiveChatId = chatId;
 
-        if (!message.trim()) {
-            setIsLoading(false);
-            return;
-        }
-
-        let effectiveChatId = chatId;
-
-        if (!effectiveChatId) {
-            try {
-                effectiveChatId = await onCreateChat(userId) ?? 0;
-            } catch (error) {
-                setIsLoading(false);
-                return;
+            // Создаем новый чат, если не выбран
+            if (!effectiveChatId) {
+                const newChatId = await onCreateChat(userId);
+                if (!newChatId) {
+                    throw new Error("Не удалось создать чат");
+                }
+                effectiveChatId = newChatId;
+                setSelectedChatId(newChatId);
+                console.log('IN');
             }
-        }
 
-        if (!clientRef.current?.connected) {
+            // Отправляем сообщение
+            if (clientRef.current?.connected) {
+                const payload = {
+                    content: message,
+                    sender: 'USER',
+                    chatId: effectiveChatId
+                };
+
+                clientRef.current.publish({
+                    destination: '/app/chat.sendMessage',
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            setMessage('');
+        } catch (error) {
+            console.error("Ошибка отправки сообщения:", error);
+        } finally {
             setIsLoading(false);
-            return;
         }
-
-        const payload = {
-            content: message,
-            sender: 'USER',
-            chatId: effectiveChatId
-        };
-
-        clientRef.current.publish({
-            destination: '/app/chat.sendMessage',
-            body: JSON.stringify(payload)
-        });
-
-        setMessage('');
-        setIsLoading(false);
     }, [message, chatId, onCreateChat, userId]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
