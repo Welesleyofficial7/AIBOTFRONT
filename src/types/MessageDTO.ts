@@ -4,4 +4,5 @@ export interface MessageDTO {
     content: string;
     sender: 'USER' | 'BOT';
     audioData: string;
+    audioMessage: boolean;
 }

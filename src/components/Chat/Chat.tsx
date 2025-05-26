@@ -28,6 +28,9 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedC
     const [isLoading, setIsLoading] = useState(false);
     const [isWidgetMinimized, setIsWidgetMinimized] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
+    const [isSendingAudio, setIsSendingAudio] = useState(false);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
     const handleWidgetMinimize = () => {
         setIsWidgetMinimized(true);
@@ -143,7 +146,8 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedC
                                 sender: receivedMessage.sender,
                                 content: receivedMessage.content || receivedMessage.response,
                                 chatId: chatId,
-                                audioData: receivedMessage.audioData
+                                audioData: receivedMessage.audioData,
+                                audioMessage: false
                             };
                             console.log("HERE SHOULD BE " + receivedMessage.sender);
                             setMessages(prev => [...prev, botMessage]);
@@ -231,6 +235,85 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedC
         }
     }, [message, chatId, onCreateChat, userId]);
 
+    useEffect(() => {
+        return () => {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [mediaRecorder]);
+
+    const handleSiriInteraction = useCallback(async (listening: boolean) => {
+        if (listening) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        sampleRate: 16000,    // 16 kHz
+                        channelCount: 1,      // Mono
+                        sampleSize: 16,       // 16 бит
+                        echoCancellation: true
+                    }
+                });
+
+                // Используем более эффективный кодек Opus с битрейтом 32 kbps
+                const recorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus',
+                    audioBitsPerSecond: 32000
+                });
+
+                // Оптимизация обработки данных
+                const chunks: Blob[] = [];
+                recorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        chunks.push(e.data);
+                    }
+                };
+
+                recorder.start(500); // Получаем данные каждые 500 мс
+
+                recorder.onstop = async () => {
+                    const audioBlob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
+
+                    // Конвертируем в base64
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    const uint8Array = new Uint8Array(arrayBuffer);
+
+                    let binaryString = '';
+                    for (let i = 0; i < uint8Array.length; i++) {
+                        binaryString += String.fromCharCode(uint8Array[i]);
+                    }
+
+                    const base64Audio = btoa(binaryString);
+
+                    // Проверка размера
+                    if (base64Audio.length > 8 * 1024 * 1024) {
+                        alert('Аудио слишком большое');
+                        return;
+                    }
+
+                    // Отправка через WebSocket
+                    if (clientRef.current?.connected && chatId) {
+                        clientRef.current.publish({
+                            destination: '/app/chat.sendAudio',
+                            body: JSON.stringify({
+                                audio: base64Audio,
+                                chatId: chatId,
+                                size: base64Audio.length
+                            })
+                        });
+                    }
+                };
+
+                setMediaRecorder(recorder);
+            } catch (error) {
+                console.error('Ошибка доступа к микрофону:', error);
+            }
+        } else {
+            mediaRecorder?.stop();
+        }
+    }, [chatId, mediaRecorder]);
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -250,7 +333,14 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedC
                                 key={msg.id || index}
                                 className={`${styles.message} ${msg.sender === 'USER' ? styles.userMessage : styles.botMessage}`}
                             >
-                                <pre>{msg.content}</pre>
+                                {msg.audioMessage ? (
+                                    <div className={styles.audioMessage}>
+                                        <audio controls src={`data:audio/webm;base64,${msg.audioData}`} />
+                                        {msg.content && <p>{msg.content}</p>}
+                                    </div>
+                                ) : (
+                                    <pre>{msg.content}</pre>
+                                )}
                             </div>
                         ))}
                         {isLoading && <LoadingIndicator />}
@@ -265,7 +355,7 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedC
                             <div className={styles.siriContainer}>
                                 <SiriWidget
                                     onMinimize={handleWidgetMinimize}
-                                    onListeningChange={handleWidgetInteraction}
+                                    onListeningChange={handleSiriInteraction}
                                 />
                             </div>
                         )}
@@ -304,7 +394,7 @@ const Chat: React.FC<ChatProps> = ({ chatId , onCreateChat, userId, setSelectedC
                     <div className={`${styles.widgetContainer} ${isRecording ? styles.recording : ''}`}>
                         <SiriWidget
                             onMinimize={handleWidgetMinimize}
-                            onListeningChange={handleWidgetInteraction}
+                            onListeningChange={handleSiriInteraction}
                             minimized={true}
                         />
                     </div>

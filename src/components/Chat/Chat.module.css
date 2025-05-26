@@ -464,3 +464,14 @@ pre {
         height: 50px;
     }
 }
+
+.audioMessage {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.audioMessage audio {
+    max-width: 250px;
+    height: 40px;
+}
